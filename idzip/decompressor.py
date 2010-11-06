@@ -1,0 +1,4 @@
+
+class IdzipFile:
+    pass
+
