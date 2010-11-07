@@ -33,7 +33,6 @@ def _compress_member(input, in_size, output, basename, mtime):
 
     #TODO: Form the chunks by flushing the compressor.
     #TODO: Write the known chunk lengths to the header.
-    #TODO: Raise an error if the in_size is too big.
 
     crcval = zlib.crc32("")
     compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
