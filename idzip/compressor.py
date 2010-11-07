@@ -11,6 +11,7 @@ COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION
 
 # Gzip header flags from RFC 1952.
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
+OS_CODE_UNIX = 3
 
 
 def compress(input, in_size, output, basename=None, mtime=0):
@@ -73,7 +74,7 @@ def _prepare_header(output, in_size, basename, mtime):
     if COMPRESSION_LEVEL == zlib.Z_BEST_COMPRESSION:
         deflate_flags = "\x02"  # slowest compression algorithm
     output.write(deflate_flags)
-    output.write('\xff')  # OS unknown
+    output.write(chr(OS_CODE_UNIX))
 
     _write_extra_fields(output, in_size)
     if basename:
