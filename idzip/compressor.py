@@ -9,6 +9,9 @@ CHUNK_LENGTH = 58315  # chunk length used by dictzip
 # slow compression is OK
 COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION
 
+# Gzip header flags from RFC 1952.
+FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
+
 
 def compress(input, in_size, output, basename=None, mtime=0):
     while True:
@@ -57,8 +60,10 @@ def _prepare_header(output, in_size, basename, mtime):
     The gzip header is defined in RFC 1952.
     """
     output.write("\x1f\x8b\x08")  # Gzip-deflate identification
+    flags = FEXTRA
     if basename:
-        output.write("\x08")  # FNAME flag
+        flags |= FNAME
+    output.write(chr(flags))
 
     # The mtime will be undefined if it does not fit.
     if mtime > 0xffffffffL:
