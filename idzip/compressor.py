@@ -28,13 +28,19 @@ def compress(input, in_size, output, basename=None, mtime=0):
 
 
 def _compress_member(input, in_size, output, basename, mtime):
-    header_io = StringIO()
-    _prepare_header(header_io, in_size, basename, mtime)
-    output.write(header_io.getvalue())
+    comp_lenghts_pos = _prepare_header(output, in_size, basename, mtime)
+    comp_lengths = _compress_data(input, in_size, output)
 
-    #TODO: Form the chunks by flushing the compressor.
-    #TODO: Write the known chunk lengths to the header.
+    end_pos = output.tell()
+    output.seek(comp_lenghts_pos)
+    for comp_len in comp_lengths:
+        _write16(output, comp_len)
 
+    output.seek(end_pos)
+
+
+def _compress_data(input, in_size, output):
+    comp_lengths = []
     crcval = zlib.crc32("")
     compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
             -zlib.MAX_WBITS)
@@ -49,10 +55,12 @@ def _compress_member(input, in_size, output, basename, mtime):
         need -= len(chunk)
         crcval = zlib.crc32(chunk, crcval)
         comp_len = _compress_chunk(compobj, chunk, output)
+        comp_lengths.append(comp_len)
 
     output.write(compobj.flush(zlib.Z_FINISH))
     _write32(output, crcval)
     _write32(output, in_size)
+    return comp_lengths
 
 
 def _compress_chunk(compobj, chunk, output):
@@ -87,12 +95,12 @@ def _prepare_header(output, in_size, basename, mtime):
     output.write(deflate_flags)
     output.write(chr(OS_CODE_UNIX))
 
-    _write_extra_fields(output, in_size)
+    comp_lenghts_pos = _write_extra_fields(output, in_size)
     if basename:
         output.write(basename + '\0')  # original basename
 
+    return comp_lenghts_pos
 
-    #TODO: add also the extra field with chunks
 
 def _write_extra_fields(output, in_size):
     """Writes the dictzip extra field.
@@ -114,7 +122,9 @@ def _write_extra_fields(output, in_size):
     _write16(output, 1)  # version
     _write16(output, CHUNK_LENGTH)
     _write16(output, num_chunks)
+    comp_lenghts_pos = output.tell()
     output.write("\0\0" * num_chunks)
+    return comp_lenghts_pos
 
 
 def _write16(output, value):
