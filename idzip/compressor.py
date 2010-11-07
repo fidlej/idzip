@@ -35,11 +35,15 @@ def _compress_member(input, in_size, output, basename, mtime):
     crcval = zlib.crc32("")
     compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
             -zlib.MAX_WBITS)
-    while True:
-        data = input.read(CHUNK_LENGTH)
-        if not data:
-            break
 
+    need = in_size
+    while need > 0:
+        read_size = min(need, CHUNK_LENGTH)
+        data = input.read(read_size)
+        if len(data) != read_size:
+            raise IOError("Need %s bytes, got %s" % (read_size, len(data)))
+
+        need -= len(data)
         crcval = zlib.crc32(data, crcval)
         output.write(compobj.compress(data))
 
