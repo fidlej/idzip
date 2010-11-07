@@ -1,4 +1,5 @@
 
+import zlib
 import struct
 from cStringIO import StringIO
 
@@ -6,7 +7,7 @@ MAX_MEMBER_SIZE = 1800 * 1024 * 1024  # 1800MB
 CHUNK_LENGTH = 58315  # chunk length used by dictzip
 
 # slow compression is OK
-COMPRESSION_LEVEL = 9
+COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION
 
 
 def compress(input, in_size, output, basename=None, mtime=0):
@@ -26,8 +27,25 @@ def _compress_member(input, in_size, output, basename, mtime):
     header_io = _prepare_header(in_size, basename, mtime)
     output.write(header_io.getvalue())
 
-    #TODO: write the compressed data
-    #TODO: write the crc and file size
+    #TODO: Form the chunks by flushing the compressor.
+    #TODO: Write the known chunk lengths to the header.
+    #TODO: Raise an error if the in_size is too big.
+    #TODO: Read just in_size bytes.
+
+    crcval = zlib.crc32("")
+    compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
+            -zlib.MAX_WBITS)
+    while True:
+        data = input.read(CHUNK_LENGTH)
+        if not data:
+            break
+
+        crcval = zlib.crc32(data, crcval)
+        output.write(compobj.compress(data))
+
+    output.write(compobj.flush())
+    _write32(output, crcval)
+    _write32(output, in_size)
 
 
 def _prepare_header(in_size, basename, mtime):
@@ -45,7 +63,7 @@ def _prepare_header(in_size, basename, mtime):
     _write32(header, mtime)
 
     deflate_flags = "\0"
-    if COMPRESSION_LEVEL == 9:
+    if COMPRESSION_LEVEL == zlib.Z_BEST_COMPRESSION:
         deflate_flags = "\x02"  # slowest compression algorithm
     header.write(deflate_flags)
     header.write('\xff')  # OS unknown
