@@ -70,11 +70,41 @@ def _prepare_header(output, in_size, basename, mtime):
         deflate_flags = "\x02"  # slowest compression algorithm
     output.write(deflate_flags)
     output.write('\xff')  # OS unknown
+
+    _write_extra_fields(output, in_size)
     if basename:
         output.write(basename + '\0')  # original basename
 
+
     #TODO: add also the extra field with chunks
 
+def _write_extra_fields(output, in_size):
+    """Writes the dictzip extra field.
+    It will be initiated with zeros in chunk lengths.
+    See man dictzip.
+    """
+    num_chunks = in_size // CHUNK_LENGTH
+    if in_size % CHUNK_LENGTH != 0:
+        num_chunks += 1
+
+    field_length = 3*2 + 2 * num_chunks
+    extra_length = 2*2 + field_length
+    assert extra_length <= 0xffff
+    _write16(output, extra_length)  # XLEN
+
+    # Dictzip extra field (Random Access)
+    output.write("RA")
+    _write16(output, field_length)
+    _write16(output, 1)  # version
+    _write16(output, CHUNK_LENGTH)
+    _write16(output, num_chunks)
+    output.write("\0\0" * num_chunks)
+
+
+def _write16(output, value):
+    """Writes only the lowest 2 bytes from the given number.
+    """
+    output.write(struct.pack("<H", value & 0xffff))
 
 def _write32(output, value):
     """Writes only the lowest 4 bytes from the given number.
