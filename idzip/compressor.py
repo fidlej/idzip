@@ -28,11 +28,11 @@ def compress(input, in_size, output, basename=None, mtime=0):
 
 
 def _compress_member(input, in_size, output, basename, mtime):
-    comp_lenghts_pos = _prepare_header(output, in_size, basename, mtime)
+    comp_lengths_pos = _prepare_header(output, in_size, basename, mtime)
     comp_lengths = _compress_data(input, in_size, output)
 
     end_pos = output.tell()
-    output.seek(comp_lenghts_pos)
+    output.seek(comp_lengths_pos)
     for comp_len in comp_lengths:
         _write16(output, comp_len)
 
@@ -95,11 +95,11 @@ def _prepare_header(output, in_size, basename, mtime):
     output.write(deflate_flags)
     output.write(chr(OS_CODE_UNIX))
 
-    comp_lenghts_pos = _write_extra_fields(output, in_size)
+    comp_lengths_pos = _write_extra_fields(output, in_size)
     if basename:
         output.write(basename + '\0')  # original basename
 
-    return comp_lenghts_pos
+    return comp_lengths_pos
 
 
 def _write_extra_fields(output, in_size):
@@ -122,9 +122,9 @@ def _write_extra_fields(output, in_size):
     _write16(output, 1)  # version
     _write16(output, CHUNK_LENGTH)
     _write16(output, num_chunks)
-    comp_lenghts_pos = output.tell()
+    comp_lengths_pos = output.tell()
     output.write("\0\0" * num_chunks)
-    return comp_lenghts_pos
+    return comp_lengths_pos
 
 
 def _write16(output, value):
