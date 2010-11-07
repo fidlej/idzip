@@ -24,13 +24,13 @@ def compress(input, in_size, output, basename=None, mtime=0):
 
 
 def _compress_member(input, in_size, output, basename, mtime):
-    header_io = _prepare_header(in_size, basename, mtime)
+    header_io = StringIO()
+    _prepare_header(header_io, in_size, basename, mtime)
     output.write(header_io.getvalue())
 
     #TODO: Form the chunks by flushing the compressor.
     #TODO: Write the known chunk lengths to the header.
     #TODO: Raise an error if the in_size is too big.
-    #TODO: Read just in_size bytes.
 
     crcval = zlib.crc32("")
     compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
@@ -52,30 +52,28 @@ def _compress_member(input, in_size, output, basename, mtime):
     _write32(output, in_size)
 
 
-def _prepare_header(in_size, basename, mtime):
+def _prepare_header(output, in_size, basename, mtime):
     """Returns a prepared gzip header StringIO.
     The gzip header is defined in RFC 1952.
     """
-    header = StringIO()
-    header.write("\x1f\x8b\x08")  # Gzip-deflate identification
+    output.write("\x1f\x8b\x08")  # Gzip-deflate identification
     if basename:
-        header.write("\x08")  # FNAME flag
+        output.write("\x08")  # FNAME flag
 
     # The mtime will be undefined if it does not fit.
     if mtime > 0xffffffffL:
         mtime = 0
-    _write32(header, mtime)
+    _write32(output, mtime)
 
     deflate_flags = "\0"
     if COMPRESSION_LEVEL == zlib.Z_BEST_COMPRESSION:
         deflate_flags = "\x02"  # slowest compression algorithm
-    header.write(deflate_flags)
-    header.write('\xff')  # OS unknown
+    output.write(deflate_flags)
+    output.write('\xff')  # OS unknown
     if basename:
-        header.write(basename + '\0')  # original basename
+        output.write(basename + '\0')  # original basename
 
     #TODO: add also the extra field with chunks
-    return header
 
 
 def _write32(output, value):
