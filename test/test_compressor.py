@@ -1,4 +1,5 @@
 
+from __future__ import with_statement
 from nose.tools import eq_
 import struct
 
@@ -6,13 +7,25 @@ from cStringIO import StringIO
 from idzip import compressor
 
 def test_compress_empty():
+    _eq_data("empty.txt")
+    _eq_data("empty.txt", mtime=1234)
+    _eq_data("empty.txt", mtime=1289163286)
+
+
+def test_compress_one_chunk():
+    #TODO: enable
+    #_eq_data("one_chunk.txt")
+    pass
+
+
+def _eq_data(basename, mtime=0):
     input = StringIO()
     output = StringIO()
-    mtime = 1234
 
-    compressor.compress(input, 0, output, "empty.txt", mtime)
+    compressor.compress(input, 0, output, basename, mtime)
 
-    expected = open("test/data/empty.txt.dz").read()
+    with open("test/data/%s.dz" % basename) as dzfile:
+        expected = dzfile.read()
     got = output.getvalue()
 
     eq_(expected[:4], got[:4])
