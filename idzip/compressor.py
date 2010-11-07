@@ -31,6 +31,7 @@ def _compress_member(input, in_size, output, basename, mtime):
     comp_lengths_pos = _prepare_header(output, in_size, basename, mtime)
     comp_lengths = _compress_data(input, in_size, output)
 
+    # Writes the lengths of compressed chunks to the header.
     end_pos = output.tell()
     output.seek(comp_lengths_pos)
     for comp_len in comp_lengths:
