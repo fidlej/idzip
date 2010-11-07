@@ -42,17 +42,28 @@ def _compress_member(input, in_size, output, basename, mtime):
     need = in_size
     while need > 0:
         read_size = min(need, CHUNK_LENGTH)
-        data = input.read(read_size)
-        if len(data) != read_size:
-            raise IOError("Need %s bytes, got %s" % (read_size, len(data)))
+        chunk = input.read(read_size)
+        if len(chunk) != read_size:
+            raise IOError("Need %s bytes, got %s" % (read_size, len(chunk)))
 
-        need -= len(data)
-        crcval = zlib.crc32(data, crcval)
-        output.write(compobj.compress(data))
+        need -= len(chunk)
+        crcval = zlib.crc32(chunk, crcval)
+        comp_len = _compress_chunk(compobj, chunk, output)
 
-    output.write(compobj.flush())
+    output.write(compobj.flush(zlib.Z_FINISH))
     _write32(output, crcval)
     _write32(output, in_size)
+
+
+def _compress_chunk(compobj, chunk, output):
+    data = compobj.compress(chunk)
+    comp_len = len(data)
+    output.write(data)
+
+    data = compobj.flush(zlib.Z_FULL_FLUSH)
+    comp_len += len(data)
+    output.write(data)
+    return comp_len
 
 
 def _prepare_header(output, in_size, basename, mtime):
