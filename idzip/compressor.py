@@ -119,9 +119,9 @@ def _write_extra_fields(output, in_size):
     +---+---+================================+
 
     Idzip adds only one subfield:
-    +---+---+-------+===============================+
+    +---+---+---+---+===============================+
     |'R'|'A'|  LEN  | LEN bytes of subfield data ...|
-    +---+---+-------+===============================+
+    +---+---+---+---+===============================+
 
     The subfield ID "RA" stands for Random Access.
     That subfield ID signalizes the dictzip gzip extension.
