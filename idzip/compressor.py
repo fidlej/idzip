@@ -3,8 +3,12 @@ import zlib
 import struct
 from cStringIO import StringIO
 
-MAX_MEMBER_SIZE = 1800 * 1024 * 1024  # 1800MB
 CHUNK_LENGTH = 58315  # chunk length used by dictzip
+
+# The max number of chunks is given by max length of the gzip extra field.
+# A new gzip member with a new header is started if hitting that limit.
+MAX_NUM_CHUNKS = (0xffff - 10) // 2
+MAX_MEMBER_SIZE = MAX_NUM_CHUNKS * CHUNK_LENGTH
 
 # slow compression is OK
 COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION

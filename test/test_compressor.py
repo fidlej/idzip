@@ -21,6 +21,20 @@ def test_compress_chunks():
     _eq_compress("medium.txt")
 
 
+def test_big_file():
+    header = StringIO()
+    in_size = compressor.MAX_MEMBER_SIZE
+    compressor._prepare_header(header, in_size, None, 0)
+
+    in_size = compressor.MAX_MEMBER_SIZE + 1
+    try:
+        compressor._prepare_header(header, in_size, None, 0)
+    except AssertionError, expected:
+        pass
+    else:
+        assert False, "A max member size check is missing."
+
+
 def _eq_compress(basename, mtime=0):
     output = StringIO()
     with open("test/data/%s" % basename, "rb") as input:
