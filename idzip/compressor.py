@@ -105,8 +105,37 @@ def _prepare_header(output, in_size, basename, mtime):
 
 def _write_extra_fields(output, in_size):
     """Writes the dictzip extra field.
-    It will be initiated with zeros in chunk lengths.
-    See man dictzip.
+    It will be initiated with zeros on the place of
+    the lengths of compressed chunks.
+
+    The gzip extra field is present when the FEXTRA flag is set.
+    RFC 1952 defines the used bytes:
+    +---+---+================================+
+    | XLEN  | XLEN bytes of "extra field" ...|
+    +---+---+================================+
+
+    Idzip adds only one subfield:
+    +---+---+-------+===============================+
+    |'R'|'A'|  LEN  | LEN bytes of subfield data ...|
+    +---+---+-------+===============================+
+
+    The subfield ID "RA" stands for Random Access.
+    That subfield ID signalizes the dictzip gzip extension.
+    The dictzip stores the length of uncompressed chunks
+    and the lengths of compressed chunks to the gzip header:
+    +---+---+---+---+---+---+==============================================+
+    | VER=1 | CHLEN | CHCNT | CHCNT 2-byte lengths of compressed chunks ...|
+    +---+---+---+---+---+---+==============================================+
+
+    Two bytes are used to store a length of a compressed chunk.
+    So the length of a compressed chunk has to be max 0xfffff.
+    That puts a restriction on the CHLEN -- the length of
+    uncompressed chunks. Dictzip uses CHLEN=58315.
+
+    Only a fixed number of chunk lengths will fit to the gzip header.
+    That limits the max file size of a dictzip file.
+    Idzip does not have that limitation. It starts a new gzip member if needed.
+    The new member would be also a valid dictzip file.
     """
     num_chunks = in_size // CHUNK_LENGTH
     if in_size % CHUNK_LENGTH != 0:
