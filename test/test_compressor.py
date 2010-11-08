@@ -15,8 +15,10 @@ def test_compress_empty():
 
 
 def test_compress_chunks():
+    _eq_compress("small.txt")
     _eq_compress("one_chunk.txt")
     _eq_compress("two_chunks.txt")
+    _eq_compress("medium.txt")
 
 
 def _eq_compress(basename, mtime=0):
