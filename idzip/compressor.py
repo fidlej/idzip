@@ -109,8 +109,8 @@ def _prepare_header(output, in_size, basename, mtime):
     OS ... operating system used for the compression.
 
     The next header sections are:
-    1) Extra fields, if the FEXTRA flag is set.
-       Its format is described in _write_extra_fields().
+    1) Extra field, if the FEXTRA flag is set.
+       Its format is described in _write_extra_field().
     2) The original file name, if the FNAME flag is set.
        The file name string is zero-terminated.
     """
@@ -131,14 +131,14 @@ def _prepare_header(output, in_size, basename, mtime):
     output.write(deflate_flags)
     output.write(chr(OS_CODE_UNIX))
 
-    comp_lengths_pos = _write_extra_fields(output, in_size)
+    comp_lengths_pos = _write_extra_field(output, in_size)
     if basename:
         output.write(basename + '\0')  # original basename
 
     return comp_lengths_pos
 
 
-def _write_extra_fields(output, in_size):
+def _write_extra_field(output, in_size):
     """Writes the dictzip extra field.
     It will be initiated with zeros on the place of
     the lengths of compressed chunks.
