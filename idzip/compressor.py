@@ -3,14 +3,14 @@ import zlib
 import struct
 from cStringIO import StringIO
 
-CHUNK_LENGTH = 58315  # chunk length used by dictzip
+CHUNK_LENGTH = 58315  # the chunk length used by dictzip
 
 # The max number of chunks is given by max length of the gzip extra field.
 # A new gzip member with a new header is started if hitting that limit.
 MAX_NUM_CHUNKS = (0xffff - 10) // 2
 MAX_MEMBER_SIZE = MAX_NUM_CHUNKS * CHUNK_LENGTH
 
-# slow compression is OK
+# Slow compression is OK.
 COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION
 
 # Gzip header flags from RFC 1952.
@@ -19,6 +19,10 @@ OS_CODE_UNIX = 3
 
 
 def compress(input, in_size, output, basename=None, mtime=0):
+    """Produces a valid gzip output for the given input.
+    A gzip file consists of one or many members.
+    Each member would be a valid gzip file.
+    """
     while True:
         member_size = min(in_size, MAX_MEMBER_SIZE)
         _compress_member(input, member_size, output, basename, mtime)
@@ -32,6 +36,10 @@ def compress(input, in_size, output, basename=None, mtime=0):
 
 
 def _compress_member(input, in_size, output, basename, mtime):
+    """A gzip member contains:
+    1) The header.
+    2) The compressed data.
+    """
     comp_lengths_pos = _prepare_header(output, in_size, basename, mtime)
     comp_lengths = _compress_data(input, in_size, output)
 
@@ -45,6 +53,13 @@ def _compress_member(input, in_size, output, basename, mtime):
 
 
 def _compress_data(input, in_size, output):
+    """Compresses the given number of input bytes to the output.
+    The output consists of:
+    1) The compressed data.
+    2) 4 bytes of CRC.
+    3) 4 bytes of file size.
+    """
+    assert in_size <= 0xffffffffL
     comp_lengths = []
     crcval = zlib.crc32("")
     compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
