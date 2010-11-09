@@ -5,7 +5,7 @@ from cStringIO import StringIO
 
 CHUNK_LENGTH = 58315  # the chunk length used by dictzip
 
-# The max number of chunks is given by max length of the gzip extra field.
+# The max number of chunks is given by the max length of the gzip extra field.
 # A new gzip member with a new header is started if hitting that limit.
 MAX_NUM_CHUNKS = (0xffff - 10) // 2
 MAX_MEMBER_SIZE = MAX_NUM_CHUNKS * CHUNK_LENGTH
