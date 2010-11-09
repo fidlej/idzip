@@ -7,6 +7,7 @@ import os
 import sys
 import compressor
 
+SUFFIX = ".dz"
 
 def main():
     args = sys.argv[1:]
@@ -19,7 +20,7 @@ def main():
         inputinfo = os.fstat(input.fileno())
         basename = os.path.basename(filename)
 
-        output = open(filename + ".gz", "wb")
+        output = open(filename + SUFFIX, "wb")
         compressor.compress(input, inputinfo.st_size, output,
                 basename, int(inputinfo.st_mtime))
 
