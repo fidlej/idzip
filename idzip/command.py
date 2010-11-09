@@ -9,8 +9,10 @@ import compressor
 
 SUFFIX = ".dz"
 
-def main():
-    args = sys.argv[1:]
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
+
     if len(args) == 0:
         print >>sys.stderr, __doc__
         sys.exit(1)
