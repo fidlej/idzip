@@ -82,6 +82,22 @@ def _compress_chunk(compobj, chunk, output):
 def _prepare_header(output, in_size, basename, mtime):
     """Returns a prepared gzip header StringIO.
     The gzip header is defined in RFC 1952.
+
+    The gzip header starts with:
+    +---+---+---+---+---+---+---+---+---+---+
+    |x1f|x8b|x08|FLG|     MTIME     |XFL|OS |
+    +---+---+---+---+---+---+---+---+---+---+
+    where:
+    FLG ... flags. FEXTRA|FNAME is used by idzip.
+    MTIME ... the modification time of the original file or 0.
+    XFL ... extra flags about the compression.
+    OS ... operating system used for the compression.
+
+    The next header sections are:
+    1) Extra fields, if the FEXTRA flag is set.
+       Its format is described in _write_extra_fields().
+    2) The original file name, if the FNAME flag is set.
+       The file name string is zero-terminated.
     """
     output.write("\x1f\x8b\x08")  # Gzip-deflate identification
     flags = FEXTRA
