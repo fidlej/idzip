@@ -16,6 +16,7 @@ class IdzipFile:
         # The current position in the decompressed data.
         self._pos = 0
         self._chlen = None
+        self._chunks = []
 
         self._read_member_header()
 
@@ -36,8 +37,8 @@ class IdzipFile:
                     "Members with different chunk length are not supported.")
 
         self._chunks = []
-        for comp_len in dictzip_field["chunks"]:
-            self.chunks.append((offset, comp_len))
+        for comp_len in dictzip_field["chunk_lengths"]:
+            self._chunks.append((offset, comp_len))
             offset += comp_len
 
     def read(self, size=-1):
@@ -61,7 +62,7 @@ class IdzipFile:
     def _readchunk(self, chunk_index):
         """Reads the specified chunk or throws EOFError.
         """
-        while chunk_index >= len(self.chunks):
+        while chunk_index >= len(self._chunks):
             self._reach_member_end()
             _read_member_header()
 
@@ -70,7 +71,7 @@ class IdzipFile:
     def _reach_member_end(self):
         """Seeks the _fileobj at the end of the last known member.
         """
-        offset, comp_len = self.chunks[-1]
+        offset, comp_len = self._chunks[-1]
         self._fileobj.seek(offset + comp_len)
         # The zlib stream could end with an empty block.
         deobj = zlib.decompressobj(-zlib.MAX_WBITS)
@@ -160,4 +161,25 @@ def _skip_cstring(input):
         c = input.read(1)
         if not c or c == "\0":
             return
+
+def _parse_dictzip_field(subfield):
+    """Returns a dict with:
+        chlen ... length of each uncompressed chunk,
+        chunk_lengths ... lengths of compressed chunks.
+
+    The dictzip subfield consists of:
+    +---+---+---+---+---+---+==============================================+
+    | VER=1 | CHLEN | CHCNT | CHCNT 2-byte lengths of compressed chunks ...|
+    +---+---+---+---+---+---+==============================================+
+    """
+    input = StringIO(subfield)
+    ver, chlen, chunk_count = struct.unpack("<HHH", input.read(6))
+    if ver != 1:
+        raise IOError("Unsupported dictzip version: %s" % ver)
+
+    chunk_lengths = []
+    for i in xrange(chunk_count):
+        chunk_lengths.append(_read16(input))
+
+    return dict(chlen=chlen, chunk_lengths=chunk_lengths)
 
