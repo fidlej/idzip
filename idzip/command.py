@@ -5,6 +5,7 @@ Compresses the given file.
 
 import os
 import sys
+
 import compressor
 
 SUFFIX = ".dz"
