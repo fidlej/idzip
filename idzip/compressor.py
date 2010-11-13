@@ -14,6 +14,7 @@ MAX_MEMBER_SIZE = MAX_NUM_CHUNKS * CHUNK_LENGTH
 COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION
 
 # Gzip header flags from RFC 1952.
+GZIP_DEFLATE_ID = "\x1f\x8b\x08"
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 OS_CODE_UNIX = 3
 
@@ -115,7 +116,7 @@ def _prepare_header(output, in_size, basename, mtime):
     2) The original file name, if the FNAME flag is set.
        The file name string is zero-terminated.
     """
-    output.write("\x1f\x8b\x08")  # Gzip-deflate identification
+    output.write(GZIP_DEFLATE_ID)
     flags = FEXTRA
     if basename:
         flags |= FNAME
