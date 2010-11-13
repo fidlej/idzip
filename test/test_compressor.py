@@ -8,6 +8,10 @@ import os
 from cStringIO import StringIO
 from idzip import compressor
 
+def test_reserved():
+    eq_(compressor.FRESERVED, int("11100000", 2))
+
+
 def test_compress_empty():
     _eq_compress("empty.txt")
     _eq_compress("empty.txt", mtime=1234)

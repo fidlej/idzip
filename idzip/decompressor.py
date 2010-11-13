@@ -1,4 +1,5 @@
 
+import os
 import struct
 import zlib
 from cStringIO import StringIO
@@ -42,14 +43,24 @@ class IdzipFile:
             offset += comp_len
 
     def read(self, size=-1):
+        """Reads the given number of bytes.
+        It returns less bytes if EOF was reached.
+
+        A negative size means unlimited reading
+        """
         chunk_index = self._pos // self._chlen
         #TODO: consider using StringIO for the result buffer
         result = ""
         need = size
+        unlimited = size < 0
         try:
-            while need > 0:
+            while need > 0 or unlimited:
                 chunk_data = self._readchunk(chunk_index)
-                result += chunk_data[:need]
+                if not unlimited and need < len(chunk_data):
+                    result += chunk_data[:need]
+                else:
+                    result += chunk_data
+
                 need = size - len(result)
                 chunk_index += 1
 
@@ -66,7 +77,10 @@ class IdzipFile:
             self._reach_member_end()
             _read_member_header()
 
-        #TODO: implement
+        offset, comp_len = self._chunks[chunk_index]
+        self._fileobj.seek(offset)
+        compressed = _read_exactly(self._fileobj, comp_len)
+        return zlib.decompress(compressed, -zlib.MAX_WBITS, self._chlen)
 
     def _reach_member_end(self):
         """Seeks the _fileobj at the end of the last known member.
@@ -83,13 +97,15 @@ class IdzipFile:
         if extra != "":
             raise IOError("Found extra compressed data after chunks.")
 
-        self._fileobj.seek(GZIP_TAIL_LEN - len(deobj.unused_data))
+        self._fileobj.seek(GZIP_TAIL_LEN - len(deobj.unused_data),
+                os.SEEK_CUR)
 
     def tell(self):
         return self._pos
 
     def __repr__(self):
         return "<idzip open file %r at %s>" % (self.name, hex(id(self)))
+
 
 
 def _read_gzip_header(input):
@@ -104,6 +120,9 @@ def _read_gzip_header(input):
     magic, flags, mtime = struct.unpack("<3sbIxx", _read_exactly(input, 10))
     if magic != compressor.GZIP_DEFLATE_ID:
         raise IOError("Not a gzip-deflate file.")
+
+    if compressor.FRESERVED & flags:
+        raise IOError("Unknown reserved flags: %s" % flags)
 
     if compressor.FEXTRA & flags:
         xlen = _read16(input)
@@ -154,6 +173,7 @@ def _split_subfields(extra_field):
         data_len = _read16(input)
         sub_fields[sub_id] = input.read(data_len)
 
+
 def _skip_cstring(input):
     """Reads and discards a zero-terminated string.
     """
@@ -161,6 +181,7 @@ def _skip_cstring(input):
         c = input.read(1)
         if not c or c == "\0":
             return
+
 
 def _parse_dictzip_field(subfield):
     """Returns a dict with:

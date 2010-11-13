@@ -30,3 +30,7 @@ def test_parse_dictzip_field():
         assert False
     except IOError, expected:
         pass
+
+
+def test_read():
+    #TODO: implement
