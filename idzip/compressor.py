@@ -77,7 +77,7 @@ def _compress_data(input, in_size, output):
         comp_len = _compress_chunk(compobj, chunk, output)
         comp_lengths.append(comp_len)
 
-    # An empty block with BFINAL=1 flag ends the data stream.
+    # An empty block with BFINAL=1 flag ends the zlib data stream.
     output.write(compobj.flush(zlib.Z_FINISH))
     _write32(output, crcval)
     _write32(output, in_size)
