@@ -35,7 +35,7 @@ class IdzipFile:
             self._chlen = dictzip_field["chlen"]
         elif self._chlen != dictzip_field["chlen"]:
             raise IOError(
-                    "Members with different chunk length are not supported.")
+                    "Members with different chunk lengths are not supported.")
 
         self._chunks = []
         for comp_len in dictzip_field["comp_lengths"]:
