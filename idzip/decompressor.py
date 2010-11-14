@@ -70,12 +70,15 @@ class IdzipFile:
         self._pos += len(result)
         return result
 
+    def close(self):
+        self._fileobj.close()
+
     def _readchunk(self, chunk_index):
         """Reads the specified chunk or throws EOFError.
         """
         while chunk_index >= len(self._chunks):
             self._reach_member_end()
-            _read_member_header()
+            self._read_member_header()
 
         offset, comp_len = self._chunks[chunk_index]
         self._fileobj.seek(offset)
@@ -91,7 +94,7 @@ class IdzipFile:
         deobj = zlib.decompressobj(-zlib.MAX_WBITS)
         extra = ""
         while deobj.unused_data == "" and not extra:
-            extra += deobj.decompress(self.fileobj.read(3))
+            extra += deobj.decompress(self._fileobj.read(3))
 
         extra += deobj.flush()
         if extra != "":
