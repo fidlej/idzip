@@ -49,24 +49,26 @@ class IdzipFile:
         A negative size means unlimited reading
         """
         chunk_index = self._pos // self._chlen
-        #TODO: consider using StringIO for the result buffer
-        result = ""
-        need = size
+        start_offset = self._pos % self._chlen
+        #TODO: consider using StringIO for the buffer
+        prefixed_buffer = ""
+        need = start_offset + size
         unlimited = size < 0
         try:
             while need > 0 or unlimited:
                 chunk_data = self._readchunk(chunk_index)
                 if not unlimited and need < len(chunk_data):
-                    result += chunk_data[:need]
+                    prefixed_buffer += chunk_data[:need]
                 else:
-                    result += chunk_data
+                    prefixed_buffer += chunk_data
 
-                need = size - len(result)
+                need -= len(chunk_data)
                 chunk_index += 1
 
         except EOFError:
             pass
 
+        result = prefixed_buffer[start_offset:]
         self._pos += len(result)
         return result
 
@@ -83,7 +85,8 @@ class IdzipFile:
         offset, comp_len = self._chunks[chunk_index]
         self._fileobj.seek(offset)
         compressed = _read_exactly(self._fileobj, comp_len)
-        return zlib.decompress(compressed, -zlib.MAX_WBITS, self._chlen)
+        deobj = zlib.decompressobj(-zlib.MAX_WBITS)
+        return deobj.decompress(compressed)
 
     def _reach_member_end(self):
         """Seeks the _fileobj at the end of the last known member.
