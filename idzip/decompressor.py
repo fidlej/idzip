@@ -49,26 +49,26 @@ class IdzipFile:
         A negative size means unlimited reading
         """
         chunk_index = self._pos // self._chlen
-        start_offset = self._pos % self._chlen
+        num_ignored = self._pos % self._chlen
         #TODO: consider using StringIO for the buffer
         prefixed_buffer = ""
-        need = start_offset + size
-        unlimited = size < 0
         try:
-            while need > 0 or unlimited:
-                chunk_data = self._readchunk(chunk_index)
-                if not unlimited and need < len(chunk_data):
+            if size < 0:
+                while True:
+                    prefixed_buffer += self._readchunk(chunk_index)
+                    chunk_index += 1
+            else:
+                need = num_ignored + size
+                while need > 0:
+                    chunk_data = self._readchunk(chunk_index)
                     prefixed_buffer += chunk_data[:need]
-                else:
-                    prefixed_buffer += chunk_data
-
-                need -= len(chunk_data)
-                chunk_index += 1
+                    need -= len(chunk_data)
+                    chunk_index += 1
 
         except EOFError:
             pass
 
-        result = prefixed_buffer[start_offset:]
+        result = prefixed_buffer[num_ignored:]
         self._pos += len(result)
         return result
 
