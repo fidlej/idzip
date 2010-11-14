@@ -117,7 +117,7 @@ def _read_gzip_header(input):
             "extra_field": {}
             }
 
-    magic, flags, mtime = struct.unpack("<3sbIxx", _read_exactly(input, 10))
+    magic, flags, mtime = struct.unpack("<3sBIxx", _read_exactly(input, 10))
     if magic != compressor.GZIP_DEFLATE_ID:
         raise IOError("Not a gzip-deflate file.")
 
