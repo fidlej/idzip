@@ -39,7 +39,6 @@ class IdzipFile:
                     "Members with different chunk lengths are not supported.")
 
         self._last_header_end = offset
-        self._chunks = []
         for comp_len in dictzip_field["comp_lengths"]:
             self._chunks.append((offset, comp_len))
             offset += comp_len
