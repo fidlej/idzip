@@ -1,1 +1,2 @@
 ^test/data/.*\.dz
+^test/data/two_members.txt

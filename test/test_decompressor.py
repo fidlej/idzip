@@ -40,6 +40,7 @@ def test_decompress():
     _eq_decompress("one_chunk.txt")
     _eq_decompress("two_chunks.txt")
     _eq_decompress("medium.txt")
+    _eq_decompress("two_members.txt")
 
 
 def test_decompress_empty():
