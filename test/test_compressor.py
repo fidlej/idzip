@@ -4,9 +4,10 @@ from __future__ import with_statement
 from nose.tools import eq_
 import struct
 import os
-
 from cStringIO import StringIO
+
 from idzip import compressor
+import asserting
 
 def test_reserved():
     eq_(compressor.FRESERVED, int("11100000", 2))
@@ -48,21 +49,10 @@ def _eq_compress(basename, mtime=0):
 
         compressor.compress(input, in_size, output, basename, mtime)
 
-    with open("test/data/%s.dz" % basename, "rb") as dzfile:
-        expected = dzfile.read()
-    got = output.getvalue()
+    output.seek(0)
+    expected = open("test/data/%s.dz" % basename, "rb")
+    asserting.eq_bytes(expected.read(4), output.read(4))
+    eq_(mtime, struct.unpack("<I", output.read(4))[0])
+    expected.seek(8)
+    asserting.eq_files(expected, output)
 
-    _eq_bytes(expected[:4], got[:4])
-    eq_(mtime, struct.unpack("<I", got[4:8])[0])
-    _eq_bytes(expected[8:], got[8:])
-
-
-def _eq_bytes(a, b):
-    i = 0
-    for i, (ac, bc) in enumerate(zip(a, b)):
-        if ac != bc:
-            break
-
-    context_size = 10
-    assert a == b, "at %s: %r != %r" % (i,
-            a[i:i+context_size], b[i:i+context_size])
