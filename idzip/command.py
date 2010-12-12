@@ -48,6 +48,10 @@ def _compress(filename, options):
 
 
 def _decompress(filename, options):
+    """Decompresses the whole file.
+    It is useful mainly for testing. Normal gunzip is enough
+    when uncompressing a file from the beginning.
+    """
     input = idzip.open(filename)
 
     target = _get_decompression_target(filename)

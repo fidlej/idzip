@@ -1,8 +1,11 @@
 
+from __future__ import with_statement
+
 import struct
 from nose.tools import eq_
 
 from idzip import decompressor
+import asserting
 
 def test_repr():
     filename = "test/data/medium.txt.dz"
@@ -33,5 +36,13 @@ def test_parse_dictzip_field():
 
 
 def test_read():
-    #TODO: implement
-    pass
+    _eq_decompress("small.txt")
+    _eq_decompress("one_chunk.txt")
+    _eq_decompress("two_chunks.txt")
+    _eq_decompress("medium.txt")
+
+
+def _eq_decompress(filename):
+    input = decompressor.IdzipFile("test/data/%s.dz" % filename)
+    asserting.eq_files("test/data/%s" % filename, input)
+
