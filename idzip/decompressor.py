@@ -17,6 +17,7 @@ class IdzipFile:
         # The current position in the decompressed data.
         self._pos = 0
         self._chlen = None
+        self._last_header_end = None
         self._chunks = []
 
         self._read_member_header()
@@ -37,6 +38,7 @@ class IdzipFile:
             raise IOError(
                     "Members with different chunk lengths are not supported.")
 
+        self._last_header_end = offset
         self._chunks = []
         for comp_len in dictzip_field["comp_lengths"]:
             self._chunks.append((offset, comp_len))
@@ -91,8 +93,12 @@ class IdzipFile:
     def _reach_member_end(self):
         """Seeks the _fileobj at the end of the last known member.
         """
-        offset, comp_len = self._chunks[-1]
-        self._fileobj.seek(offset + comp_len)
+        if len(self._chunks) > 0:
+            offset, comp_len = self._chunks[-1]
+            self._fileobj.seek(offset + comp_len)
+        else:
+            self._fileobj.seek(self._last_header_end)
+
         # The zlib stream could end with an empty block.
         deobj = zlib.decompressobj(-zlib.MAX_WBITS)
         extra = ""

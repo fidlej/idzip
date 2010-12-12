@@ -35,11 +35,15 @@ def test_parse_dictzip_field():
         pass
 
 
-def test_read():
+def test_decompress():
     _eq_decompress("small.txt")
     _eq_decompress("one_chunk.txt")
     _eq_decompress("two_chunks.txt")
     _eq_decompress("medium.txt")
+
+
+def test_decompress_empty():
+    _eq_decompress("empty.txt")
 
 
 def _eq_decompress(filename):
