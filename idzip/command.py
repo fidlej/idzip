@@ -23,8 +23,6 @@ def _parse_args():
             help="increase verbosity")
     parser.set_defaults(verbose=0)
 
-    #TODO: use argv[0] to detect idzcat or idunzip
-    #TODO: And also modify the help for them.
     options, args = parser.parse_args()
     if len(args) == 0:
         parser.error("An input file is required.")
