@@ -64,11 +64,22 @@ def test_begining_read():
 def test_end_read():
     buflen = 1234
     for reader in _create_data_readers():
-        reader.expected_input.seek(0, os.SEEK_END)
-        filesize = reader.expected_input.tell()
+        filesize = reader.filesize()
         for i in xrange(100):
             reader.seek(max(0, filesize - i * buflen))
             reader.read(buflen)
+
+
+def test_eof():
+    buflen = 1234
+    for reader in _create_data_readers():
+        filesize = reader.filesize()
+        reader.seek(filesize)
+        eq_("", reader.read(1))
+
+        if filesize > 0:
+            reader.seek(filesize - 1)
+            assert len(reader.read(1)) == 1
 
 
 def _create_data_readers():
@@ -111,3 +122,8 @@ class EqReader:
         self.input.seek(pos)
         eq_(self.expected_input.tell(), self.input.tell())
 
+    def filesize(self):
+        self.expected_input.seek(0, os.SEEK_END)
+        filesize = self.expected_input.tell()
+        self.expected_input.seek(self.input.tell())
+        return filesize
