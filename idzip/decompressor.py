@@ -23,7 +23,7 @@ class IdzipFile(object):
         self._read_member_header()
 
     def _read_member_header(self):
-        """Fills self._chlen and self._chunks
+        """Extends self._members and self._chunks
         by the read header data.
         """
         header = _read_gzip_header(self._fileobj)
