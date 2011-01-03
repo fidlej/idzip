@@ -32,6 +32,7 @@ class IdzipFile(object):
             raise IOError("Not an idzip file: %r" % self.name)
 
         dictzip_field = _parse_dictzip_field(header["extra_field"]["RA"])
+        num_member_chunks = len(dictzip_field["comp_lengths"])
 
         start_chunk_index = len(self._chunks)
         for comp_len in dictzip_field["comp_lengths"]:
@@ -40,12 +41,17 @@ class IdzipFile(object):
         self._last_zstream_end = offset
 
         chlen = dictzip_field["chlen"]
+        sure_size = chlen * (num_member_chunks - 1)
+        self._add_member(chlen, start_chunk_index, sure_size)
+
+    def _add_member(self, chlen, start_chunk_index, sure_size):
         if len(self._members) > 0:
             prev_member = self._members[-1]
             start_pos = prev_member.start_pos + prev_member.isize
         else:
             start_pos = 0
-        self._members.append(_Member(chlen, start_pos, start_chunk_index))
+        self._members.append(_Member(chlen, start_pos, start_chunk_index,
+            sure_size))
 
     def read(self, size=-1):
         """Reads the given number of bytes.
@@ -102,9 +108,11 @@ class IdzipFile(object):
                     return self._members[-1]
 
                 member = self._members[i]
+                if pos < member.start_pos + member.sure_size:
+                    return member
+
                 if member.isize is None:
                     self._parse_next_member()
-
                 if pos < member.start_pos + member.isize:
                     return member
 
@@ -165,10 +173,11 @@ class IdzipFile(object):
 
 
 class _Member(object):
-    def __init__(self, chlen, start_pos, start_chunk_index):
+    def __init__(self, chlen, start_pos, start_chunk_index, sure_size):
         self.chlen = chlen
         self.start_pos = start_pos
         self.start_chunk_index = start_chunk_index
+        self.sure_size = sure_size
         self.isize = None
 
     def set_input_size(self, isize):
