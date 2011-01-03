@@ -3,7 +3,6 @@ from test_decompressor import create_data_readers
 
 def test_unlimited_readline():
     for reader in create_data_readers():
-        print reader.expected_input
         for i in xrange(10000):
             if not reader.readline():
                 break

@@ -98,7 +98,7 @@ class IdzipFile(object):
 
             line += data[prefix_size:]
             prefix_size = 0
-            if size >= len(line):
+            if size >= 0 and len(line) >= size:
                 break
 
         if size >= 0:
