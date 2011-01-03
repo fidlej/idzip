@@ -2,21 +2,21 @@
 import os
 import struct
 import zlib
+import itertools
 from cStringIO import StringIO
 
 from idzip import compressor
 
-# The gzip tail contains 4 bytes for CRC and 4 bytes for of the file size.
-GZIP_TAIL_LEN = 8
+GZIP_CRC32_LEN = 4
 
 
-class IdzipFile:
+class IdzipFile(object):
     def __init__(self, filename):
         self.name = filename
         self._fileobj = open(filename, "rb")
         # The current position in the decompressed data.
         self._pos = 0
-        self._chlen = None
+        self._members = []
         self._last_zstream_end = None
         self._chunks = []
 
@@ -32,16 +32,20 @@ class IdzipFile:
             raise IOError("Not an idzip file: %r" % self.name)
 
         dictzip_field = _parse_dictzip_field(header["extra_field"]["RA"])
-        if self._chlen is None:
-            self._chlen = dictzip_field["chlen"]
-        elif self._chlen != dictzip_field["chlen"]:
-            raise IOError(
-                    "Members with different chunk lengths are not supported.")
 
+        start_chunk_index = len(self._chunks)
         for comp_len in dictzip_field["comp_lengths"]:
             self._chunks.append((offset, comp_len))
             offset += comp_len
         self._last_zstream_end = offset
+
+        chlen = dictzip_field["chlen"]
+        if len(self._members) > 0:
+            prev_member = self._members[-1]
+            start_pos = prev_member.start_pos + prev_member.isize
+        else:
+            start_pos = 0
+        self._members.append(_Member(chlen, start_pos, start_chunk_index))
 
     def read(self, size=-1):
         """Reads the given number of bytes.
@@ -49,8 +53,7 @@ class IdzipFile:
 
         A negative size means unlimited reading
         """
-        chunk_index = self._pos // self._chlen
-        prefix_size = self._pos % self._chlen
+        chunk_index, prefix_size = self._index_pos(self._pos)
         prefixed_buffer = ""
         try:
             if size < 0:
@@ -75,18 +78,54 @@ class IdzipFile:
     def close(self):
         self._fileobj.close()
 
+    def _index_pos(self, pos):
+        """Returns (chunk_index, remainder) index
+        for the given position in uncompressed data.
+        """
+        member = self._select_member(pos)
+
+        pos_in_member = (pos - member.start_pos)
+        member_chunk_index = pos_in_member // member.chlen
+        chunk_index = member.start_chunk_index + member_chunk_index
+        remainder = pos_in_member % member.chlen
+        return (chunk_index, remainder)
+
+    def _select_member(self, pos):
+        """Returns a member that covers the given pos.
+
+        If the pos is after the EOF, the last member is returned.
+        The EOF will be hit when reading from it.
+        """
+        try:
+            for i in itertools.count():
+                if i >= len(self._members):
+                    return self._members[-1]
+
+                member = self._members[i]
+                if member.isize is None:
+                    self._parse_next_member()
+
+                if pos < member.start_pos + member.isize:
+                    return member
+
+        except EOFError:
+            return self._members[-1]
+
     def _readchunk(self, chunk_index):
         """Reads the specified chunk or throws EOFError.
         """
         while chunk_index >= len(self._chunks):
-            self._reach_member_end()
-            self._read_member_header()
+            self._parse_next_member()
 
         offset, comp_len = self._chunks[chunk_index]
         self._fileobj.seek(offset)
         compressed = _read_exactly(self._fileobj, comp_len)
         deobj = zlib.decompressobj(-zlib.MAX_WBITS)
         return deobj.decompress(compressed)
+
+    def _parse_next_member(self):
+        self._reach_member_end()
+        self._read_member_header()
 
     def _reach_member_end(self):
         """Seeks the _fileobj at the end of the last known member.
@@ -103,8 +142,10 @@ class IdzipFile:
         if extra != "":
             raise IOError("Found extra compressed data after chunks.")
 
-        self._fileobj.seek(GZIP_TAIL_LEN - len(deobj.unused_data),
+        self._fileobj.seek(GZIP_CRC32_LEN - len(deobj.unused_data),
                 os.SEEK_CUR)
+        isize = _read32(self._fileobj)
+        self._members[-1].set_input_size(isize)
 
     def tell(self):
         return self._pos
@@ -122,6 +163,16 @@ class IdzipFile:
     def __repr__(self):
         return "<idzip open file %r at %s>" % (self.name, hex(id(self)))
 
+
+class _Member(object):
+    def __init__(self, chlen, start_pos, start_chunk_index):
+        self.chlen = chlen
+        self.start_pos = start_pos
+        self.start_chunk_index = start_chunk_index
+        self.isize = None
+
+    def set_input_size(self, isize):
+        self.isize = isize
 
 
 def _read_gzip_header(input):
@@ -166,10 +217,14 @@ def _read_exactly(input, size):
 
 
 def _read16(input):
-    """Reads next two bytes as an integer.
+    """Reads next two bytes as an unsigned integer.
     """
     return struct.unpack("<H", _read_exactly(input, 2))[0]
 
+def _read32(input):
+    """Reads next four bytes as an unsigned integer.
+    """
+    return struct.unpack("<I", _read_exactly(input, 4))[0]
 
 def _split_subfields(extra_field):
     """Returns a dict with {sub_id: subfield_data} entries.
