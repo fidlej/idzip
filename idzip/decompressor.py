@@ -160,13 +160,17 @@ class IdzipFile(object):
 
     def seek(self, offset, whence=os.SEEK_SET):
         if whence == os.SEEK_SET:
-            self._pos = offset
+            new_pos = offset
         elif whence == os.SEEK_CUR:
-            self._pos += offset
+            new_pos = self._pos = offset
         elif whence == os.SEEK_END:
             raise ValueError("Seek from the end not supported")
         else:
             raise ValueError("Unknown whence: %r" % whence)
+
+        if new_pos < 0:
+            raise ValueError("Invalid pos: %r" % new_pos)
+        self._pos = new_pos
 
     def __repr__(self):
         return "<idzip open file %r at %s>" % (self.name, hex(id(self)))

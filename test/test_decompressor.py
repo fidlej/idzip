@@ -1,6 +1,7 @@
 
 from __future__ import with_statement
 
+import os
 import struct
 from nose.tools import eq_
 
@@ -59,6 +60,15 @@ def test_begining_read():
         reader.seek(0)
         for i in xrange(2):
             reader.read(100000)
+
+def test_end_read():
+    buflen = 1234
+    for reader in _create_data_readers():
+        reader.expected_input.seek(0, os.SEEK_END)
+        filesize = reader.expected_input.tell()
+        for i in xrange(100):
+            reader.seek(max(0, filesize - i * buflen))
+            reader.read(buflen)
 
 
 def _create_data_readers():
