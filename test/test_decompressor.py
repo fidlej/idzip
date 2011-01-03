@@ -45,6 +45,7 @@ def test_decompress():
 
 def test_decompress_empty():
     _eq_decompress("empty.txt")
+    _eq_decompress("small_empty_medium.txt")
 
 
 def _eq_decompress(filename):
