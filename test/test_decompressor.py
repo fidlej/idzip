@@ -48,7 +48,56 @@ def test_decompress_empty():
     _eq_decompress("small_empty_medium.txt")
 
 
+def test_begining_read():
+    for reader in _create_data_readers():
+        for i in xrange(100):
+            data = reader.read(1234)
+
+        for i in xrange(100):
+            reader.read(1)
+
+        reader.seek(0)
+        for i in xrange(2):
+            reader.read(100000)
+
+
+def _create_data_readers():
+    filenames = [
+            "empty.txt",
+            "medium.txt",
+            "one_chunk.txt",
+            "small.txt",
+            "small_empty_medium.txt",
+            "two_chunks.txt",
+            "two_members.txt",
+        ]
+    readers = []
+    for filename in filenames:
+        expected_input = open("test/data/%s" % filename)
+        input = decompressor.IdzipFile("test/data/%s.dz" % filename)
+        readers.append(EqReader(expected_input, input))
+
+    return readers
+
+
 def _eq_decompress(filename):
     input = decompressor.IdzipFile("test/data/%s.dz" % filename)
     asserting.eq_files("test/data/%s" % filename, input)
+
+
+class EqReader:
+    def __init__(self, expected_input, input):
+        self.expected_input = expected_input
+        self.input = input
+
+    def read(self, size=None):
+        expected = self.expected_input.read(size)
+        got = self.input.read(size)
+        asserting.eq_bytes(expected, got)
+        return got
+
+    def seek(self, pos):
+        self.expected_input.seek(pos)
+        self.input.seek(pos)
+        eq_(self.expected_input.tell(), self.input.tell())
 
