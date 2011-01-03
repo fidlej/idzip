@@ -51,7 +51,6 @@ class IdzipFile:
         """
         chunk_index = self._pos // self._chlen
         prefix_size = self._pos % self._chlen
-        #TODO: consider using StringIO for the buffer
         prefixed_buffer = ""
         try:
             if size < 0:
@@ -109,6 +108,16 @@ class IdzipFile:
 
     def tell(self):
         return self._pos
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence == os.SEEK_SET:
+            self._pos = offset
+        elif whence == os.SEEK_CUR:
+            self._pos += offset
+        elif whence == os.SEEK_END:
+            raise ValueError("Seek from the end not supported")
+        else:
+            raise ValueError("Unknown whence: %r" % whence)
 
     def __repr__(self):
         return "<idzip open file %r at %s>" % (self.name, hex(id(self)))
