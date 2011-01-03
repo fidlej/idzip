@@ -50,7 +50,7 @@ def test_decompress_empty():
 
 
 def test_begining_read():
-    for reader in _create_data_readers():
+    for reader in create_data_readers():
         for i in xrange(100):
             data = reader.read(1234)
 
@@ -63,7 +63,7 @@ def test_begining_read():
 
 def test_end_read():
     buflen = 1234
-    for reader in _create_data_readers():
+    for reader in create_data_readers():
         filesize = reader.filesize()
         for i in xrange(100):
             reader.seek(max(0, filesize - i * buflen))
@@ -72,7 +72,7 @@ def test_end_read():
 
 def test_eof():
     buflen = 1234
-    for reader in _create_data_readers():
+    for reader in create_data_readers():
         filesize = reader.filesize()
         reader.seek(filesize)
         eq_("", reader.read(1))
@@ -82,7 +82,7 @@ def test_eof():
             assert len(reader.read(1)) == 1
 
 
-def _create_data_readers():
+def create_data_readers():
     filenames = [
             "empty.txt",
             "medium.txt",
@@ -121,6 +121,12 @@ class EqReader:
         self.expected_input.seek(pos)
         self.input.seek(pos)
         eq_(self.expected_input.tell(), self.input.tell())
+
+    def readline(self, size=-1):
+        expected = self.expected_input.readline(size)
+        got = self.input.readline(size)
+        asserting.eq_bytes(expected, got)
+        return got
 
     def filesize(self):
         self.expected_input.seek(0, os.SEEK_END)
