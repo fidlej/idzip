@@ -84,21 +84,22 @@ class IdzipFile(object):
     def readline(self, size=-1):
         chunk_index, prefix_size = self._index_pos(self._pos)
         line = ""
-        try:
-            while True:
+        while True:
+            try:
                 data = self._readchunk(chunk_index)
-                eol_pos = data.find("\n", prefix_size)
-                if eol_pos != -1:
-                    line += data[prefix_size:eol_pos+1]
-                    break
+            except EOFError:
+                break
 
-                line += data[prefix_size:]
-                prefix_size = 0
-                if size >= len(line):
-                    break
+            chunk_index += 1
+            eol_pos = data.find("\n", prefix_size)
+            if eol_pos != -1:
+                line += data[prefix_size:eol_pos+1]
+                break
 
-        except EOFError:
-            pass
+            line += data[prefix_size:]
+            prefix_size = 0
+            if size >= len(line):
+                break
 
         if size >= 0:
             line = line[:size]
