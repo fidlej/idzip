@@ -181,6 +181,7 @@ class _Member(object):
         self.isize = None
 
     def set_input_size(self, isize):
+        assert isize >= self.sure_size
         self.isize = isize
 
 
