@@ -3,7 +3,8 @@ import zlib
 import struct
 from cStringIO import StringIO
 
-CHUNK_LENGTH = 58315  # the chunk length used by dictzip
+# The chunk length used by dictzip.
+CHUNK_LENGTH = 58315 
 
 # The max number of chunks is given by the max length of the gzip extra field.
 # A new gzip member with a new header is started if hitting that limit.
