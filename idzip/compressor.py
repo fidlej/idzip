@@ -4,7 +4,7 @@ import struct
 from cStringIO import StringIO
 
 # The chunk length used by dictzip.
-CHUNK_LENGTH = 58315 
+CHUNK_LENGTH = 58315
 
 # The max number of chunks is given by the max length of the gzip extra field.
 # A new gzip member with a new header is started if hitting that limit.
@@ -17,7 +17,7 @@ COMPRESSION_LEVEL = zlib.Z_BEST_COMPRESSION
 # Gzip header flags from RFC 1952.
 GZIP_DEFLATE_ID = "\x1f\x8b\x08"
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
-FRESERVED = 0xff ^ (FTEXT|FHCRC|FEXTRA|FNAME|FCOMMENT)
+FRESERVED = 0xff - (FTEXT|FHCRC|FEXTRA|FNAME|FCOMMENT)
 OS_CODE_UNIX = 3
 
 
