@@ -97,7 +97,7 @@ def _eq_zformat(expected, output, mtime=0, expected_basename=None, in_size=None)
     # flags
     flags = ord(expected.read(1)) & 0xff
     if expected_basename is None:
-        flags = flags ^ compressor.FNAME
+        flags = flags - compressor.FNAME
     eq_(flags, ord(output.read(1)) & 0xff)
 
     # mtime
