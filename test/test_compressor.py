@@ -49,27 +49,54 @@ def _eq_compress(basename, mtime=0):
 
         compressor.compress(input, in_size, output, basename, mtime)
 
-    filename = "test/data/%s.dz" % basename
+    
     output.seek(0)
-    expected = open(filename, "rb")
+    expected = open("test/data/%s.dz" % basename, "rb")
     asserting.eq_bytes(expected.read(4), output.read(4))
 
     # mtime
     eq_(mtime, struct.unpack("<I", output.read(4))[0])
-    expected.seek(8)
+    expected.read(4)
+
+    # XFL and OS
+    asserting.eq_bytes(expected.read(2), output.read(2))
 
     # field header
-    xlen = ord(expected.read(1)) + 256 * ord(expected.read(1))
-    expected.seek(-2, os.SEEK_CUR)
-    asserting.eq_bytes(expected.read(10), output.read(10))
-    expected.seek(xlen - 10, os.SEEK_CUR)
-    output.seek(xlen - 10, os.SEEK_CUR)
+    info_len = 10
+    xlen_bytes = expected.read(2)
+    asserting.eq_bytes(xlen_bytes, output.read(2))
+    xlen = ord(xlen_bytes[0]) & 0xff + 256 * (ord(xlen_bytes[1]) & 0xff)
+    asserting.eq_bytes(expected.read(info_len), output.read(info_len))
+    expected.seek(xlen - info_len, os.SEEK_CUR)
+    output.seek(xlen - info_len, os.SEEK_CUR)
+    num_chunks = in_size // compressor.CHUNK_LENGTH
+    if in_size % compressor.CHUNK_LENGTH:
+        num_chunks += 1
+    eq_(num_chunks, (xlen - info_len) // 2)
 
     # filename
-    filename_len = len(filename) + 1
-    asserting.eq_bytes(expected.read(filename_len), output.read(filename_len))
+    fname_len = len(basename) + 1
+    asserting.eq_bytes(expected.read(fname_len), output.read(fname_len))
+
+    _eq_zstream(expected, output)
 
     # tail
     expected.seek(-8, os.SEEK_END)
     output.seek(-8, os.SEEK_END)
     asserting.eq_bytes(expected.read(8), output.read(8))
+
+
+def _eq_zstream(expected, produced):
+    """Compares the zstreams.
+    Their decompressed bytes are compared.
+    The compressed bytes differ, because of the different
+    flushing used in the Python zlib and dictzip.
+    """
+    import zlib
+    deobj = zlib.decompressobj(-zlib.MAX_WBITS)
+    expected_data = deobj.decompress(expected.read())
+
+    deobj = zlib.decompressobj(-zlib.MAX_WBITS)
+    got = deobj.decompress(produced.read())
+    asserting.eq_bytes(expected_data, got)
+
