@@ -1,5 +1,12 @@
 #!/bin/sh
 set -e
+zcat quixote.txt.gz > quixote.txt
+head -c58315 quixote.txt >one_chunk.txt
+head -c116630 quixote.txt >two_chunks.txt
+head -c18011 quixote.txt >small.txt
+head -c134641 quixote.txt >medium.txt
+rm -f quixote.txt
+
 dictzip -k *.txt
 cat small.txt medium.txt >two_members.txt
 cat small.txt.dz medium.txt.dz >two_members.txt.dz
