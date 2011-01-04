@@ -5,7 +5,7 @@ import zlib
 import itertools
 from cStringIO import StringIO
 
-from idzip import compressor
+from idzip import compressor, caching
 
 GZIP_CRC32_LEN = 4
 
@@ -19,6 +19,7 @@ class IdzipFile(object):
         self._members = []
         self._last_zstream_end = None
         self._chunks = []
+        self._cache = caching.OneItemCache()
 
         self._read_member_header()
 
@@ -147,6 +148,15 @@ class IdzipFile(object):
     def _readchunk(self, chunk_index):
         """Reads the specified chunk or throws EOFError.
         """
+        chunk = self._cache.get(chunk_index)
+        if chunk is not None:
+            return chunk
+
+        chunk = self._uncached_readchunk(chunk_index)
+        self._cache.put(chunk_index, chunk)
+        return chunk
+
+    def _uncached_readchunk(self, chunk_index):
         while chunk_index >= len(self._chunks):
             self._parse_next_member()
 
