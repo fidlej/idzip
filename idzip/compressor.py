@@ -64,7 +64,7 @@ def _compress_data(input, in_size, output):
     assert in_size <= 0xffffffffL
     comp_lengths = []
     crcval = zlib.crc32("")
-    compobj = zlib.compressobj(zlib.Z_BEST_COMPRESSION, zlib.DEFLATED,
+    compobj = zlib.compressobj(COMPRESSION_LEVEL, zlib.DEFLATED,
             -zlib.MAX_WBITS)
 
     need = in_size
