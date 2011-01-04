@@ -1,2 +1,2 @@
 ^test/data/.*\.dz
-^test/data/*\.txt
+^test/data/.*\.txt
