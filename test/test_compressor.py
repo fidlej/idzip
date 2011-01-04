@@ -49,10 +49,27 @@ def _eq_compress(basename, mtime=0):
 
         compressor.compress(input, in_size, output, basename, mtime)
 
+    filename = "test/data/%s.dz" % basename
     output.seek(0)
-    expected = open("test/data/%s.dz" % basename, "rb")
+    expected = open(filename, "rb")
     asserting.eq_bytes(expected.read(4), output.read(4))
+
+    # mtime
     eq_(mtime, struct.unpack("<I", output.read(4))[0])
     expected.seek(8)
-    asserting.eq_files(expected, output)
 
+    # field header
+    xlen = ord(expected.read(1)) + 256 * ord(expected.read(1))
+    expected.seek(-2, os.SEEK_CUR)
+    asserting.eq_bytes(expected.read(10), output.read(10))
+    expected.seek(xlen - 10, os.SEEK_CUR)
+    output.seek(xlen - 10, os.SEEK_CUR)
+
+    # filename
+    filename_len = len(filename) + 1
+    asserting.eq_bytes(expected.read(filename_len), output.read(filename_len))
+
+    # tail
+    expected.seek(-8, os.SEEK_END)
+    output.seek(-8, os.SEEK_END)
+    asserting.eq_bytes(expected.read(8), output.read(8))
