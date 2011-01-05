@@ -58,7 +58,7 @@ class IdzipFile(object):
         """Reads the given number of bytes.
         It returns less bytes if EOF was reached.
 
-        A negative size means unlimited reading
+        A negative size means unlimited reading.
         """
         chunk_index, prefix_size = self._index_pos(self._pos)
         prefixed_buffer = ""
@@ -76,6 +76,7 @@ class IdzipFile(object):
                     chunk_index += 1
 
         except EOFError:
+            # The read data will be returned.
             pass
 
         result = prefixed_buffer[prefix_size:]
