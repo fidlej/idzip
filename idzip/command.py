@@ -13,17 +13,22 @@ sys.path.insert(0, parent_dir)
 import idzip
 from idzip import compressor
 
-SUFFIX = ".dz"
+DEFAULT_SUFFIX = ".dz"
 
 def _parse_args():
     parser = optparse.OptionParser(__doc__)
     parser.add_option("-d", "--decompress", action="store_true",
             help="decompress the file")
+    parser.add_option("-S", "--suffix",
+            help="change the default suffix (default=%s)" % DEFAULT_SUFFIX)
     parser.add_option("-v", "--verbose", action="count",
             help="increase verbosity")
-    parser.set_defaults(verbose=0)
+    parser.set_defaults(verbose=0, suffix=DEFAULT_SUFFIX)
 
     options, args = parser.parse_args()
+    if not options.suffix or "/" in options.suffix:
+        parser.error("Incorrect suffix: %r" % options.suffix)
+
     if len(args) == 0:
         parser.error("An input file is required.")
 
@@ -35,7 +40,7 @@ def _compress(filename, options):
     inputinfo = os.fstat(input.fileno())
     basename = os.path.basename(filename)
 
-    target = filename + SUFFIX
+    target = filename + options.suffix
     logging.info("compressing %r to %r", filename, target)
     output = open(target, "wb")
     compressor.compress(input, inputinfo.st_size, output,
@@ -50,9 +55,14 @@ def _decompress(filename, options):
     It is useful mainly for testing. Normal gunzip is enough
     when uncompressing a file from the beginning.
     """
-    input = idzip.open(filename)
+    suffix = options.suffix
+    if not filename.endswith(suffix) or len(filename) == len(suffix):
+        logging.warn("without %r suffix -- ignored: %r",
+                suffix, filename)
+        return
 
-    target = _get_decompression_target(filename)
+    target = filename[:-len(suffix)]
+    input = idzip.open(filename)
     logging.info("uncompressing %r to %r", filename, target)
     output = open(target, "wb")
     while True:
@@ -64,15 +74,6 @@ def _decompress(filename, options):
 
     output.close()
     input.close()
-
-
-def _get_decompression_target(filename):
-    head, tail = os.path.split(filename)
-    parts = tail.rsplit(".", 1)
-    if len(parts) != 2 or not parts[0]:
-        return filename + ".undz"
-
-    return os.path.join(head, parts[0])
 
 
 def main():
