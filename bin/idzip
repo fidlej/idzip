@@ -1,1 +1,2 @@
-../idzip/command.py
+#!/bin/sh
+exec python -m idzip.command "$@"
