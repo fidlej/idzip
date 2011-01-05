@@ -110,6 +110,7 @@ class IdzipFile(object):
 
     def close(self):
         self._fileobj.close()
+        self._cache = None
 
     def _index_pos(self, pos):
         """Returns (chunk_index, remainder) index

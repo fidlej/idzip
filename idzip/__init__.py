@@ -1,5 +1,11 @@
 
 def open(filename):
     from idzip.decompressor import IdzipFile
-    return IdzipFile(filename)
+    try:
+        return IdzipFile(filename)
+    except IOError, e:
+        import logging
+        import gzip
+        logging.info("Using gzip fallback: %r", e)
+        return gzip.open(filename, "rb")
 
