@@ -21,9 +21,11 @@ def _parse_args():
             help="decompress the file")
     parser.add_option("-S", "--suffix",
             help="change the default suffix (default=%s)" % DEFAULT_SUFFIX)
+    parser.add_option("-k", "--keep", action="store_true",
+            help="don't unlink the processed files")
     parser.add_option("-v", "--verbose", action="count",
             help="increase verbosity")
-    parser.set_defaults(verbose=0, suffix=DEFAULT_SUFFIX)
+    parser.set_defaults(verbose=0, suffix=DEFAULT_SUFFIX, keep=False)
 
     options, args = parser.parse_args()
     if not options.suffix or "/" in options.suffix:
@@ -48,6 +50,7 @@ def _compress(filename, options):
 
     output.close()
     input.close()
+    return True
 
 
 def _decompress(filename, options):
@@ -59,7 +62,7 @@ def _decompress(filename, options):
     if not filename.endswith(suffix) or len(filename) == len(suffix):
         logging.warn("without %r suffix -- ignored: %r",
                 suffix, filename)
-        return
+        return False
 
     target = filename[:-len(suffix)]
     input = idzip.open(filename)
@@ -74,6 +77,7 @@ def _decompress(filename, options):
 
     output.close()
     input.close()
+    return True
 
 
 def main():
@@ -85,7 +89,9 @@ def main():
         action = _decompress
 
     for filename in args:
-        action(filename, options)
+        ok = action(filename, options)
+        if ok and not options.keep:
+            os.unlink(filename)
 
 
 if __name__ == "__main__":
