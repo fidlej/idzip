@@ -33,12 +33,12 @@ class IdzipFile(object):
             raise IOError("Not an idzip file: %r" % self.name)
 
         dictzip_field = _parse_dictzip_field(header["extra_field"]["RA"])
-        num_member_chunks = len(dictzip_field["comp_lengths"])
+        num_member_chunks = len(dictzip_field["zlengths"])
 
         start_chunk_index = len(self._chunks)
-        for comp_len in dictzip_field["comp_lengths"]:
-            self._chunks.append((offset, comp_len))
-            offset += comp_len
+        for zlen in dictzip_field["zlengths"]:
+            self._chunks.append((offset, zlen))
+            offset += zlen
         self._last_zstream_end = offset
 
         chlen = dictzip_field["chlen"]
@@ -162,9 +162,9 @@ class IdzipFile(object):
         while chunk_index >= len(self._chunks):
             self._parse_next_member()
 
-        offset, comp_len = self._chunks[chunk_index]
+        offset, zlen = self._chunks[chunk_index]
         self._fileobj.seek(offset)
-        compressed = _read_exactly(self._fileobj, comp_len)
+        compressed = _read_exactly(self._fileobj, zlen)
         deobj = zlib.decompressobj(-zlib.MAX_WBITS)
         return deobj.decompress(compressed)
 
@@ -308,7 +308,7 @@ def _skip_cstring(input):
 def _parse_dictzip_field(subfield):
     """Returns a dict with:
         chlen ... length of each uncompressed chunk,
-        comp_lengths ... lengths of compressed chunks.
+        zlengths ... lengths of compressed chunks.
 
     The dictzip subfield consists of:
     +---+---+---+---+---+---+==============================================+
@@ -320,9 +320,9 @@ def _parse_dictzip_field(subfield):
     if ver != 1:
         raise IOError("Unsupported dictzip version: %s" % ver)
 
-    comp_lengths = []
+    zlengths = []
     for i in xrange(chunk_count):
-        comp_lengths.append(_read16(input))
+        zlengths.append(_read16(input))
 
-    return dict(chlen=chlen, comp_lengths=comp_lengths)
+    return dict(chlen=chlen, zlengths=zlengths)
 

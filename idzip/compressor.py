@@ -43,14 +43,14 @@ def _compress_member(input, in_size, output, basename, mtime):
     1) The header.
     2) The compressed data.
     """
-    comp_lengths_pos = _prepare_header(output, in_size, basename, mtime)
-    comp_lengths = _compress_data(input, in_size, output)
+    zlengths_pos = _prepare_header(output, in_size, basename, mtime)
+    zlengths = _compress_data(input, in_size, output)
 
     # Writes the lengths of compressed chunks to the header.
     end_pos = output.tell()
-    output.seek(comp_lengths_pos)
-    for comp_len in comp_lengths:
-        _write16(output, comp_len)
+    output.seek(zlengths_pos)
+    for zlen in zlengths:
+        _write16(output, zlen)
 
     output.seek(end_pos)
 
@@ -63,7 +63,7 @@ def _compress_data(input, in_size, output):
     3) 4 bytes of file size.
     """
     assert in_size <= 0xffffffffL
-    comp_lengths = []
+    zlengths = []
     crcval = zlib.crc32("")
     compobj = zlib.compressobj(COMPRESSION_LEVEL, zlib.DEFLATED,
             -zlib.MAX_WBITS)
@@ -77,25 +77,25 @@ def _compress_data(input, in_size, output):
 
         need -= len(chunk)
         crcval = zlib.crc32(chunk, crcval)
-        comp_len = _compress_chunk(compobj, chunk, output)
-        comp_lengths.append(comp_len)
+        zlen = _compress_chunk(compobj, chunk, output)
+        zlengths.append(zlen)
 
     # An empty block with BFINAL=1 flag ends the zlib data stream.
     output.write(compobj.flush(zlib.Z_FINISH))
     _write32(output, crcval)
     _write32(output, in_size)
-    return comp_lengths
+    return zlengths
 
 
 def _compress_chunk(compobj, chunk, output):
     data = compobj.compress(chunk)
-    comp_len = len(data)
+    zlen = len(data)
     output.write(data)
 
     data = compobj.flush(zlib.Z_FULL_FLUSH)
-    comp_len += len(data)
+    zlen += len(data)
     output.write(data)
-    return comp_len
+    return zlen
 
 
 def _prepare_header(output, in_size, basename, mtime):
@@ -135,11 +135,11 @@ def _prepare_header(output, in_size, basename, mtime):
     output.write(deflate_flags)
     output.write(chr(OS_CODE_UNIX))
 
-    comp_lengths_pos = _write_extra_field(output, in_size)
+    zlengths_pos = _write_extra_field(output, in_size)
     if basename:
         output.write(basename + '\0')  # original basename
 
-    return comp_lengths_pos
+    return zlengths_pos
 
 
 def _write_extra_field(output, in_size):
@@ -191,9 +191,9 @@ def _write_extra_field(output, in_size):
     _write16(output, 1)  # version
     _write16(output, CHUNK_LENGTH)
     _write16(output, num_chunks)
-    comp_lengths_pos = output.tell()
+    zlengths_pos = output.tell()
     output.write("\0\0" * num_chunks)
-    return comp_lengths_pos
+    return zlengths_pos
 
 
 def _write16(output, value):
