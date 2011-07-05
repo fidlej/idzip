@@ -48,7 +48,7 @@ def _compress(filename, options):
     compressor.compress(input, inputinfo.st_size, output,
             basename, int(inputinfo.st_mtime))
 
-    output.close()
+    _finish_output(output, options)
     input.close()
     return True
 
@@ -75,9 +75,17 @@ def _decompress(filename, options):
 
         output.write(data)
 
-    output.close()
+    _finish_output(output, options)
     input.close()
     return True
+
+
+def _finish_output(output, options):
+    if not options.keep:
+        # We want to preserve at least one copy of the data.
+        output.flush()
+        os.fsync(output.fileno())
+    output.close()
 
 
 def main():
