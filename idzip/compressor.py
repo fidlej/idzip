@@ -1,3 +1,14 @@
+"""
+This compressor produces a seekable compression format.
+It is possible to decompress any part of the output.
+The decompression does not need to start from the file begining.
+
+The format is gzip compabile. Gunzip can uncompress it.
+Extra info is stored in the gzip header.
+
+Project description:
+http://code.google.com/p/idzip/
+"""
 
 import zlib
 import struct
