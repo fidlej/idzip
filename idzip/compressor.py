@@ -1,7 +1,6 @@
 
 import zlib
 import struct
-from cStringIO import StringIO
 
 # The chunk length used by dictzip.
 CHUNK_LENGTH = 58315
@@ -99,7 +98,7 @@ def _compress_chunk(compobj, chunk, output):
 
 
 def _prepare_header(output, in_size, basename, mtime):
-    """Returns a prepared gzip header StringIO.
+    """Writes a prepared gzip header to the output.
     The gzip header is defined in RFC 1952.
 
     The gzip header starts with:
