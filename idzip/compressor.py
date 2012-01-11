@@ -1,9 +1,9 @@
 """
 This compressor produces a seekable compression format.
 It is possible to decompress any part of the output.
-The decompression does not need to start from the file begining.
+The decompression does not need to start from the file beginning.
 
-The format is gzip compabile. Gunzip can uncompress it.
+The format is gzip compatible. Gunzip can uncompress it.
 Extra info is stored in the gzip header.
 
 Project description:
