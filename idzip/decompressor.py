@@ -199,7 +199,7 @@ class IdzipFile(object):
         if whence == os.SEEK_SET:
             new_pos = offset
         elif whence == os.SEEK_CUR:
-            new_pos = self._pos = offset
+            new_pos = self._pos + offset
         elif whence == os.SEEK_END:
             raise ValueError("Seek from the end not supported")
         else:

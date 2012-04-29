@@ -61,6 +61,7 @@ def test_begining_read():
         for i in xrange(2):
             reader.read(100000)
 
+
 def test_end_read():
     buflen = 1234
     for reader in create_data_readers():
@@ -68,6 +69,13 @@ def test_end_read():
         for i in xrange(100):
             reader.seek(max(0, filesize - i * buflen))
             reader.read(buflen)
+
+
+def test_seek_cur():
+    for reader in create_data_readers():
+        for i in xrange(100):
+            data = reader.read(1234)
+            reader.seek(i, os.SEEK_CUR)
 
 
 def test_eof():
@@ -117,9 +125,9 @@ class EqReader:
         asserting.eq_bytes(expected, got)
         return got
 
-    def seek(self, pos):
-        self.expected_input.seek(pos)
-        self.input.seek(pos)
+    def seek(self, pos, whence=os.SEEK_SET):
+        self.expected_input.seek(pos, whence)
+        self.input.seek(pos, whence)
         eq_(self.expected_input.tell(), self.input.tell())
 
     def readline(self, size=-1):
