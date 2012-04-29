@@ -229,7 +229,7 @@ class _Member(object):
 def _read_gzip_header(input):
     """Returns a parsed gzip header.
     The position of the input is advanced beyond the header.
-    EOFError is throws if there is not enough of data for the header.
+    EOFError is thrown if there is not enough of data for the header.
     """
     header = {
             "extra_field": {}
